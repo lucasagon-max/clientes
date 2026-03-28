@@ -204,14 +204,11 @@
     const SUPABASE_URL = 'https://fepvxdmssoqfktqmbyzn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZlcHZ4ZG1zc29xZmt0cW1ieXpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDg4NjUsImV4cCI6MjA4OTkyNDg2NX0.Duy840JZEMWxXzguf1JV71xhjdaLmpZiileBdGAJf0I';
 
-    // BUG CORRIGIDO: O SDK expõe o cliente via window.supabase.createClient.
-    // A linha original "const supabase = supabase.createClient(...)" causava
-    // ReferenceError circular pois tentava usar a variável antes de declará-la.
-    const { createClient } = window.supabase;
-    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Inicialização segura do Supabase
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // =============================================
-    // 2. CONTROLE DA TELA
+    // 2. CONTROLE DA TELA E VARIÁVEIS
     // =============================================
     let quantidade = 1;
 
@@ -226,20 +223,18 @@
 
     function atualizarTela() {
         displayQtd.innerText = quantidade;
-        spanValorTotal.innerText = (quantidade * PRECO_BANDEJA)
-            .toFixed(2)
-            .replace('.', ',');
+        spanValorTotal.innerText = (quantidade * PRECO_BANDEJA).toFixed(2).replace('.', ',');
     }
 
     btnMenos.addEventListener('click', () => {
         if (quantidade > 1) { quantidade--; atualizarTela(); }
     });
+
     btnMais.addEventListener('click', () => {
-        quantidade++;
-        atualizarTela();
+        quantidade++; atualizarTela();
     });
 
-    // Máscara de telefone: (15) 99999-9999
+    // Máscara de telefone
     inputTelefone.addEventListener('input', function () {
         let digits = this.value.replace(/\D/g, '').slice(0, 11);
         if (digits.length === 0) { this.value = ''; return; }
@@ -250,19 +245,19 @@
     });
 
     // =============================================
-    // 3. VALIDAÇÃO
+    // 3. VALIDAÇÕES E UTILIDADES
     // =============================================
     function validarFormulario() {
-        const nomeAluno      = document.getElementById('nomeAluno').value.trim();
-        const turma          = document.getElementById('turma').value.trim();
-        const nomeResp       = document.getElementById('nomeResponsavel').value.trim();
-        const telDigitos     = inputTelefone.value.replace(/\D/g, '');
+        const nomeAluno  = document.getElementById('nomeAluno').value.trim();
+        const turma      = document.getElementById('turma').value.trim();
+        const nomeResp   = document.getElementById('nomeResponsavel').value.trim();
+        const telDigitos = inputTelefone.value.replace(/\D/g, '');
 
-        if (!nomeAluno)       return 'Informe o nome completo do aluno.';
-        if (!turma)           return 'Informe a série / turma do aluno.';
-        if (!nomeResp)        return 'Informe o seu nome de responsável.';
+        if (!nomeAluno) return 'Informe o nome completo do aluno.';
+        if (!turma) return 'Informe a série / turma do aluno.';
+        if (!nomeResp) return 'Informe o seu nome de responsável.';
         if (telDigitos.length < 10) return 'Informe um telefone válido com DDD.';
-        return null; // sem erros
+        return null;
     }
 
     function mostrarErro(msg) {
@@ -275,42 +270,39 @@
         mensagemErro.classList.remove('visible');
     }
 
-    // =============================================
-    // 4. ENVIO DO PEDIDO (CORRIGIDO)
-    // =============================================
-    
-    // Função infalível para gerar o ID do pedido aqui mesmo no navegador
+    // Criador de ID para "burlar" a leitura do banco de dados
     function gerarIdSeguro() {
         return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
             (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
         );
     }
 
+    // =============================================
+    // 4. ENVIO DO PEDIDO (MERCADO PAGO)
+    // =============================================
     btnPagar.addEventListener('click', async () => {
         esconderErro();
 
         const erroValidacao = validarFormulario();
         if (erroValidacao) { mostrarErro(erroValidacao); return; }
 
-        // Estado de loading
+        // Estado de loading visual
         btnPagar.innerHTML = '<span class="spinner"></span>Processando...';
         btnPagar.disabled = true;
 
-        const nomeAluno      = document.getElementById('nomeAluno').value.trim();
-        const turma          = document.getElementById('turma').value.trim();
+        const nomeAluno       = document.getElementById('nomeAluno').value.trim();
+        const turma           = document.getElementById('turma').value.trim();
         const nomeResponsavel = document.getElementById('nomeResponsavel').value.trim();
-        const telefone       = inputTelefone.value.trim();
-        const total          = quantidade * PRECO_BANDEJA;
-        
-        // Criamos o ID antes de falar com o banco!
-        const pedidoId = gerarIdSeguro();
+        const telefone        = inputTelefone.value.trim();
+        const total           = quantidade * PRECO_BANDEJA;
+        const pedidoId        = gerarIdSeguro(); // ID gerado na hora!
 
         try {
-            // A. Salva o pedido no banco (SEM O .select() que causava o bloqueio)
+            // A. Salva os dados no Supabase usando nosso ID e ignorando o .select()
             const { error: erroBanco } = await supabaseClient
                 .from('pedidos_escola')
                 .insert([{
-                    id: pedidoId, // Enviamos o ID que acabamos de criar
+                    id: pedidoId,
                     nome_aluno: nomeAluno,
                     turma: turma,
                     nome_responsavel: nomeResponsavel,
@@ -320,23 +312,24 @@
                     status_pagamento: 'pendente'
                 }]);
 
-            if (erroBanco) throw new Error('Erro do Banco: ' + erroBanco.message);
+            if (erroBanco) throw new Error('Erro ao salvar no banco: ' + erroBanco.message);
 
-            // B. Chama a Função do Mercado Pago passando o nosso ID
+            // B. Aciona o Mercado Pago mandando o ID gerado
             const { data: pagamentoData, error: erroPagamento } = await supabaseClient.functions.invoke('gerar-pagamento', {
                 body: { pedido_id: pedidoId, quantidade: quantidade }
             });
 
-            if (erroPagamento) throw new Error('Erro na Função: ' + erroPagamento.message);
-            if (!pagamentoData?.url) throw new Error('Mercado Pago não retornou o link.');
+            if (erroPagamento) throw new Error('Erro na Função MP: ' + erroPagamento.message);
+            if (!pagamentoData?.url) throw new Error('Nenhum link foi retornado pelo MP.');
 
-            // C. Redireciona para o Checkout Oficial!
+            // C. Sucesso! Redireciona o cliente para pagar
             window.location.href = pagamentoData.url;
 
         } catch (error) {
-            console.error(error);
-            mostrarErro('Não foi possível gerar o pagamento. Tente novamente.');
+            console.error("DETALHE DO ERRO:", error);
+            mostrarErro('Ocorreu um erro ao gerar o pagamento. Tente novamente.');
             btnPagar.innerHTML = 'Pagar Agora 💳';
             btnPagar.disabled = false;
         }
     });
+</script>
