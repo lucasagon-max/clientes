@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Morangos Tatuí - Pedido Escolar</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- BUG CORRIGIDO: SDK deve ser carregado antes de qualquer uso -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -16,7 +15,6 @@
             --morango: #E3244B;
             --morango-dark: #c01a3b;
             --morango-light: #fde8ec;
-            --morango-mid: #f9c0ce;
         }
 
         .bg-morango       { background-color: var(--morango); }
@@ -24,14 +22,12 @@
         .border-morango   { border-color: var(--morango); }
         .bg-morango-light { background-color: var(--morango-light); }
 
-        /* Fundo com textura suave */
         body {
             background-color: #fdf5f7;
             background-image: radial-gradient(circle at 20% 10%, #fde8ec 0%, transparent 50%),
                               radial-gradient(circle at 80% 90%, #fde8ec 0%, transparent 50%);
         }
 
-        /* Animação de entrada dos cards */
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(18px); }
             to   { opacity: 1; transform: translateY(0); }
@@ -40,19 +36,13 @@
             animation: slideUp 0.4s ease forwards;
             opacity: 0;
         }
-        .slide-up:nth-child(1) { animation-delay: 0.05s; }
-        .slide-up:nth-child(2) { animation-delay: 0.12s; }
-        .slide-up:nth-child(3) { animation-delay: 0.19s; }
-        .slide-up:nth-child(4) { animation-delay: 0.26s; }
 
-        /* Inputs com foco na cor da marca */
         input:focus {
             outline: none;
             border-color: var(--morango) !important;
             box-shadow: 0 0 0 3px rgba(227, 36, 75, 0.12);
         }
 
-        /* Botão principal */
         .btn-pagar {
             background-color: var(--morango);
             transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
@@ -62,23 +52,12 @@
             transform: translateY(-1px);
             box-shadow: 0 6px 20px rgba(227, 36, 75, 0.35);
         }
-        .btn-pagar:active:not(:disabled) {
-            transform: translateY(0);
-        }
-        .btn-pagar:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
+        .btn-pagar:active:not(:disabled) { transform: translateY(0); }
+        .btn-pagar:disabled { opacity: 0.7; cursor: not-allowed; }
 
-        /* Badge de erro */
-        #mensagemErro {
-            display: none;
-        }
-        #mensagemErro.visible {
-            display: flex;
-        }
+        #mensagemErro { display: none; }
+        #mensagemErro.visible { display: flex; }
 
-        /* Spinner */
         .spinner {
             width: 18px; height: 18px;
             border: 2.5px solid rgba(255,255,255,0.4);
@@ -94,9 +73,7 @@
 </head>
 <body class="text-gray-800 pb-28">
 
-    <!-- Cabeçalho -->
     <header class="bg-white shadow-sm pt-8 pb-5 px-4 text-center">
-        <!-- Troque o src pela URL real do logotipo: Morangos-Tatui-logotipo.jpg -->
         <img src="Morangos-Tatui-logotipo.jpg"
              onerror="this.style.display='none';document.getElementById('logoFallback').style.display='block'"
              alt="Logotipo Morangos Tatuí" class="mx-auto h-14 mb-2 object-contain">
@@ -110,7 +87,6 @@
 
     <main class="max-w-md mx-auto mt-5 px-4 space-y-3">
 
-        <!-- Card do Produto -->
         <div class="slide-up bg-white p-4 rounded-2xl shadow-sm border border-pink-100 flex items-center">
             <div class="flex-1 pr-3">
                 <span class="text-xs font-bold uppercase tracking-wide text-morango bg-morango-light px-2 py-0.5 rounded-full">Produto</span>
@@ -118,14 +94,12 @@
                 <p class="text-xs text-gray-500 mt-0.5 leading-relaxed">Morangos selecionados e fresquinhos, entregues direto na escola.</p>
                 <p class="text-morango font-black text-lg mt-2">R$ 15,00</p>
             </div>
-            <!-- Troque o src pela URL real da imagem: Morangos-Tatuí.png -->
             <img src="Morangos-Tatuí.png"
                  onerror="this.src='https://placehold.co/80x80/fde8ec/E3244B?text=🍓'"
                  alt="Bandeja de Morango"
                  class="w-20 h-20 object-cover rounded-xl flex-shrink-0">
         </div>
 
-        <!-- Mensagem de Erro (oculta por padrão) -->
         <div id="mensagemErro" class="items-center gap-3 bg-red-50 border border-red-200 rounded-2xl p-3 text-sm text-red-700 font-semibold">
             <span class="text-lg">⚠️</span>
             <span id="textoErro">Ocorreu um erro. Tente novamente.</span>
@@ -133,22 +107,32 @@
 
         <form id="pedidoForm" novalidate class="space-y-3">
 
-            <!-- Dados do Aluno -->
+            <!-- NOVA SESSÃO: DADOS DOS ALUNOS (Dinâmica) -->
             <div class="slide-up bg-white p-4 rounded-2xl shadow-sm border border-pink-100">
-                <h3 class="font-bold mb-3 text-sm text-gray-600 flex items-center gap-1">
-                    🧑‍🎓 <span>Dados do Aluno</span>
-                </h3>
-                <div class="space-y-2.5">
-                    <input type="text" id="nomeAluno" required autocomplete="off"
-                           placeholder="Nome completo do aluno"
-                           class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm transition-all">
-                    <input type="text" id="turma" required autocomplete="off"
-                           placeholder="Série / Turma (Ex: 2º Ano A)"
-                           class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm transition-all">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-bold text-sm text-gray-600 flex items-center gap-1">
+                        🧑‍🎓 <span>Dados do(s) Aluno(s)</span>
+                    </h3>
                 </div>
+                
+                <!-- Aqui dentro vão os campos dos alunos -->
+                <div id="alunosContainer" class="space-y-4">
+                    <div class="aluno-item space-y-2.5">
+                        <input type="text" name="nomeAluno" required autocomplete="off"
+                               placeholder="Nome completo do aluno"
+                               class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm transition-all">
+                        <input type="text" name="turma" required autocomplete="off"
+                               placeholder="Série / Turma (Ex: 2º Ano A)"
+                               class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm transition-all">
+                    </div>
+                </div>
+                
+                <!-- Botão para adicionar irmão -->
+                <button type="button" id="btnAddAluno" class="mt-4 w-full bg-morango-light text-morango font-bold py-2.5 rounded-xl text-sm hover:bg-red-100 transition flex items-center justify-center gap-2">
+                    <span>+</span> Incluir outro irmão/irmã
+                </button>
             </div>
 
-            <!-- Dados do Responsável -->
             <div class="slide-up bg-white p-4 rounded-2xl shadow-sm border border-pink-100">
                 <h3 class="font-bold mb-3 text-sm text-gray-600 flex items-center gap-1">
                     📱 <span>Dados do Responsável</span>
@@ -163,7 +147,6 @@
                 </div>
             </div>
 
-            <!-- Controle de Quantidade -->
             <div class="slide-up bg-white p-4 rounded-2xl shadow-sm border border-pink-100 flex items-center justify-between">
                 <span class="font-bold text-gray-700 text-sm">Quantidade de bandejas:</span>
                 <div class="flex items-center gap-4 bg-gray-50 rounded-xl p-1.5 border border-gray-200">
@@ -182,7 +165,6 @@
         </form>
     </main>
 
-    <!-- Barra Inferior Fixa -->
     <div class="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 px-4 pt-3 pb-6 shadow-xl">
         <div class="max-w-md mx-auto flex items-center justify-between">
             <div>
@@ -197,21 +179,14 @@
     </div>
 
 <script>
-    // =============================================
-    // 1. CONFIGURAÇÕES
-    // =============================================
     const PRECO_BANDEJA = 15.00;
     const SUPABASE_URL = 'https://fepvxdmssoqfktqmbyzn.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZlcHZ4ZG1zc29xZmt0cW1ieXpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDg4NjUsImV4cCI6MjA4OTkyNDg2NX0.Duy840JZEMWxXzguf1JV71xhjdaLmpZiileBdGAJf0I';
 
-    // Inicialização segura do Supabase
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { createClient } = window.supabase;
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // =============================================
-    // 2. CONTROLE DA TELA E VARIÁVEIS
-    // =============================================
     let quantidade = 1;
-
     const btnMenos        = document.getElementById('btnMenos');
     const btnMais         = document.getElementById('btnMais');
     const displayQtd      = document.getElementById('displayQuantidade');
@@ -221,20 +196,54 @@
     const mensagemErro    = document.getElementById('mensagemErro');
     const textoErro       = document.getElementById('textoErro');
 
+    // === NOVA LÓGICA DE MÚLTIPLOS ALUNOS ===
+    const btnAddAluno = document.getElementById('btnAddAluno');
+    const alunosContainer = document.getElementById('alunosContainer');
+
+    btnAddAluno.addEventListener('click', () => {
+        const count = alunosContainer.children.length + 1;
+        const div = document.createElement('div');
+        div.className = 'aluno-item space-y-2.5 pt-4 border-t border-gray-100 mt-4 relative slide-up';
+        div.innerHTML = `
+            <div class="flex justify-between items-center mb-1">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wide">Irmão ${count}</span>
+                <button type="button" class="text-red-500 text-xs font-bold hover:text-red-700 px-2 py-1 bg-red-50 rounded btn-remover">Remover</button>
+            </div>
+            <input type="text" name="nomeAluno" required autocomplete="off" placeholder="Nome completo do irmão" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm transition-all">
+            <input type="text" name="turma" required autocomplete="off" placeholder="Série / Turma (Ex: 5º Ano B)" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl text-sm transition-all">
+        `;
+        alunosContainer.appendChild(div);
+
+        // Aumenta a quantidade de bandejas automaticamente pro pai
+        quantidade++;
+        atualizarTela();
+
+        // Lógica para remover o campo
+        div.querySelector('.btn-remover').addEventListener('click', function() {
+            div.remove();
+            renumerarAlunos();
+            if(quantidade > 1) { quantidade--; atualizarTela(); }
+        });
+    });
+
+    function renumerarAlunos() {
+        const items = alunosContainer.querySelectorAll('.aluno-item');
+        items.forEach((item, index) => {
+            if (index > 0) {
+                const span = item.querySelector('span');
+                if(span) span.innerText = 'IRMÃO ' + (index + 1);
+            }
+        });
+    }
+
     function atualizarTela() {
         displayQtd.innerText = quantidade;
         spanValorTotal.innerText = (quantidade * PRECO_BANDEJA).toFixed(2).replace('.', ',');
     }
 
-    btnMenos.addEventListener('click', () => {
-        if (quantidade > 1) { quantidade--; atualizarTela(); }
-    });
+    btnMenos.addEventListener('click', () => { if (quantidade > 1) { quantidade--; atualizarTela(); } });
+    btnMais.addEventListener('click', () => { quantidade++; atualizarTela(); });
 
-    btnMais.addEventListener('click', () => {
-        quantidade++; atualizarTela();
-    });
-
-    // Máscara de telefone
     inputTelefone.addEventListener('input', function () {
         let digits = this.value.replace(/\D/g, '').slice(0, 11);
         if (digits.length === 0) { this.value = ''; return; }
@@ -244,17 +253,17 @@
         this.value = formatted;
     });
 
-    // =============================================
-    // 3. VALIDAÇÕES E UTILIDADES
-    // =============================================
     function validarFormulario() {
-        const nomeAluno  = document.getElementById('nomeAluno').value.trim();
-        const turma      = document.getElementById('turma').value.trim();
+        const nomesInputs = document.querySelectorAll('input[name="nomeAluno"]');
+        const turmasInputs = document.querySelectorAll('input[name="turma"]');
         const nomeResp   = document.getElementById('nomeResponsavel').value.trim();
         const telDigitos = inputTelefone.value.replace(/\D/g, '');
 
-        if (!nomeAluno) return 'Informe o nome completo do aluno.';
-        if (!turma) return 'Informe a série / turma do aluno.';
+        let alunosPreenchidos = true;
+        nomesInputs.forEach(i => { if(!i.value.trim()) alunosPreenchidos = false; });
+        turmasInputs.forEach(i => { if(!i.value.trim()) alunosPreenchidos = false; });
+
+        if (!alunosPreenchidos) return 'Preencha o nome e a turma de todos os alunos.';
         if (!nomeResp) return 'Informe o seu nome de responsável.';
         if (telDigitos.length < 10) return 'Informe um telefone válido com DDD.';
         return null;
@@ -265,46 +274,36 @@
         mensagemErro.classList.add('visible');
         mensagemErro.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
+    function esconderErro() { mensagemErro.classList.remove('visible'); }
+    function gerarIdSeguro() { return Date.now() + Math.floor(Math.random() * 1000); }
 
-    function esconderErro() {
-        mensagemErro.classList.remove('visible');
-    }
-
-    // Criador de ID numérico para encaixar perfeitamente na coluna BIGINT do Supabase
-    function gerarIdSeguro() {
-        // Pega a data atual em milissegundos e soma com um número aleatório
-        // Exemplo do resultado: 1711651586123
-        return Date.now() + Math.floor(Math.random() * 1000);
-    }
-
-    // =============================================
-    // 4. ENVIO DO PEDIDO (MERCADO PAGO)
-    // =============================================
     btnPagar.addEventListener('click', async () => {
         esconderErro();
-
         const erroValidacao = validarFormulario();
         if (erroValidacao) { mostrarErro(erroValidacao); return; }
 
-        // Estado de loading visual
         btnPagar.innerHTML = '<span class="spinner"></span>Processando...';
         btnPagar.disabled = true;
 
-        const nomeAluno       = document.getElementById('nomeAluno').value.trim();
-        const turma           = document.getElementById('turma').value.trim();
+        // Junta os nomes e as turmas com a letra "e"
+        const nomesArray = Array.from(document.querySelectorAll('input[name="nomeAluno"]')).map(i => i.value.trim());
+        const turmasArray = Array.from(document.querySelectorAll('input[name="turma"]')).map(i => i.value.trim());
+        
+        const nomeAlunoCombinado = nomesArray.join(' e ');
+        const turmaCombinada = turmasArray.join(' e ');
+
         const nomeResponsavel = document.getElementById('nomeResponsavel').value.trim();
         const telefone        = inputTelefone.value.trim();
         const total           = quantidade * PRECO_BANDEJA;
-        const pedidoId        = gerarIdSeguro(); // ID gerado na hora!
+        const pedidoId        = gerarIdSeguro();
 
         try {
-            // A. Salva os dados no Supabase usando nosso ID e ignorando o .select()
             const { error: erroBanco } = await supabaseClient
                 .from('pedidos_escola')
                 .insert([{
                     id: pedidoId,
-                    nome_aluno: nomeAluno,
-                    turma: turma,
+                    nome_aluno: nomeAlunoCombinado, // Envia "João e Maria"
+                    turma: turmaCombinada,          // Envia "2º A e 5º B"
                     nome_responsavel: nomeResponsavel,
                     telefone_responsavel: telefone,
                     quantidade: quantidade,
@@ -312,29 +311,29 @@
                     status_pagamento: 'pendente'
                 }]);
 
-            if (erroBanco) throw new Error('Erro ao salvar no banco: ' + erroBanco.message);
+            if (erroBanco) throw new Error('Erro Banco: ' + erroBanco.message);
 
-            // B. Aciona o Mercado Pago mandando o ID gerado e os dados da criança
             const { data: pagamentoData, error: erroPagamento } = await supabaseClient.functions.invoke('gerar-pagamento', {
                 body: { 
                     pedido_id: pedidoId, 
                     quantidade: quantidade,
-                    nome_aluno: nomeAluno, // Enviando o nome para a nuvem
-                    turma: turma           // Enviando a turma para a nuvem
+                    nome_aluno: nomeAlunoCombinado, // Passa os dois nomes para a nuvem
+                    turma: turmaCombinada           // Passa as duas turmas para a nuvem
                 }
             });
 
-            if (erroPagamento) throw new Error('Erro na Função MP: ' + erroPagamento.message);
-            if (!pagamentoData?.url) throw new Error('Nenhum link foi retornado pelo MP.');
+            if (erroPagamento) throw new Error('Erro MP: ' + erroPagamento.message);
+            if (!pagamentoData?.url) throw new Error('Link não retornado.');
 
-            // C. Sucesso! Redireciona o cliente para pagar
             window.location.href = pagamentoData.url;
 
         } catch (error) {
-            console.error("DETALHE DO ERRO:", error);
-            mostrarErro('Ocorreu um erro ao gerar o pagamento. Tente novamente.');
+            console.error(error);
+            mostrarErro('Não foi possível gerar o pagamento. Tente novamente.');
             btnPagar.innerHTML = 'Pagar Agora 💳';
             btnPagar.disabled = false;
         }
     });
 </script>
+</body>
+</html>
