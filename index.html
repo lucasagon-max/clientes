@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Morangos Tatuí - Pedido Escolar</title>
+    <!-- Importando o Supabase direto no HTML -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Design misturando Escola (papel de caderno) e Morangos Tatuí (Vermelho) */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fdf6e3; 
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-image: linear-gradient(#e4e4e4 1px, transparent 1px);
+            background-size: 100% 2em; /* Efeito de linhas de caderno */
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 90%;
+            border: 3px solid #e63946; /* Vermelho Morango */
+            margin: 20px 0;
+        }
+        h2 {
+            color: #e63946;
+            text-align: center;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        input:focus {
+            border-color: #e63946;
+            outline: none;
+        }
+        .total-box {
+            background-color: #ffe8e8;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #d62828;
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #e63946;
+            color: white;
+            border: none;
+            padding: 15px;
+            width: 100%;
+            font-size: 1.2em;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #c1121f;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🍓 Dia do Morango</h2>
+    <p style="text-align: center; font-size: 0.9em; color: #666;">Garanta a bandeja para o evento na escola!</p>
+    
+    <form id="pedidoForm">
+        <div class="form-group">
+            <label for="nomeAluno">Nome do Aluno(a):</label>
+            <input type="text" id="nomeAluno" required placeholder="Ex: Luana...">
+        </div>
+        <div class="form-group">
+            <label for="turma">Série / Turma:</label>
+            <input type="text" id="turma" required placeholder="Ex: 2º Ano A">
+        </div>
+        <div class="form-group">
+            <label for="quantidade">Quantas bandejas?</label>
+            <input type="number" id="quantidade" min="1" value="1" required>
+        </div>
+        
+        <div class="total-box">
+            Total: R$ <span id="valorTotal">15.00</span>
+        </div>
+
+        <button type="submit" id="btnPagar">Reservar e Pagar</button>
+    </form>
+</div>
+
+<script>
+    // ==========================================
+    // 1. CONFIGURAÇÕES E CREDENCIAIS
+    // ==========================================
+    const PRECO_BANDEJA = 15.00; // Ajuste se o valor da bandeja for diferente
+    
+    // Credenciais reais do Supabase inseridas
+    const SUPABASE_URL = 'https://fepvxdmssoqfktqmbyzn.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZlcHZ4ZG1zc29xZmt0cW1ieXpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQzNDg4NjUsImV4cCI6MjA4OTkyNDg2NX0.Duy840JZEMWxXzguf1JV71xhjdaLmpZiileBdGAJf0I';
+    
+    // URL do Mercado Pago a ser preenchida posteriormente
+    const URL_MERCADO_PAGO = 'SUA_URL_MERCADO_PAGO_AQUI';
+    
+    // ==========================================
+    // INICIALIZAÇÃO E LÓGICA DE TELA
+    // ==========================================
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const inputQuantidade = document.getElementById('quantidade');
+    const spanValorTotal = document.getElementById('valorTotal');
+
+    // Atualiza o valor total em tempo real quando a quantidade muda
+    inputQuantidade.addEventListener('input', (e) => {
+        let qtd = parseInt(e.target.value);
+        if (isNaN(qtd) || qtd < 1) {
+            qtd = 1;
+            e.target.value = 1;
+        }
+        const total = (qtd * PRECO_BANDEJA).toFixed(2);
+        spanValorTotal.innerText = total;
+    });
+
+    // ==========================================
+    // AÇÃO AO CLICAR EM "RESERVAR E PAGAR"
+    // ==========================================
+    document.getElementById('pedidoForm').addEventListener('submit', async (e) => {
+        e.preventDefault(); // Evita recarregar a página
+        
+        const btn = document.getElementById('btnPagar');
+        btn.innerText = "Processando...";
+        btn.disabled = true;
+
+        const nome = document.getElementById('nomeAluno').value;
+        const turma = document.getElementById('turma').value;
+        const quantidade = parseInt(document.getElementById('quantidade').value);
+        const total = quantidade * PRECO_BANDEJA;
+
+        try {
+            // Salva os dados na tabela pedidos_escola do Supabase
+            const { error } = await supabase
+                .from('pedidos_escola')
+                .insert([
+                    { 
+                        nome_aluno: nome, 
+                        turma: turma, 
+                        quantidade: quantidade, 
+                        valor_total: total, 
+                        status_pagamento: 'pendente' 
+                    }
+                ]);
+
+            if (error) throw error;
+
+            // Redireciona o pai para o link de pagamento
+            window.location.href = URL_MERCADO_PAGO;
+
+        } catch (error) {
+            alert("Ocorreu um erro ao salvar o pedido. Por favor, verifique a conexão e tente novamente.");
+            console.error("Erro do Supabase:", error);
+            btn.innerText = "Reservar e Pagar";
+            btn.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>
