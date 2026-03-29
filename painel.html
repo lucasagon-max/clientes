@@ -165,7 +165,7 @@
 
                 // LÓGICA WHATSAPP
                 const telLimpo = pedido.telefone_responsavel.replace(/\D/g, ''); 
-                const msg = `Olá, ${pedido.nome_responsavel}! 🍓 Passando para confirmar que recebemos seu pedido da(s) bandeja(s) de Páscoa do(a) ${pedido.nome_aluno}. Tudo certo! 🥰\n\nSe puder, ajude a divulgar nosso link no grupo de pais: https://clientes.morangostatui.com.br 🚀`;
+                const msg = `Olá, ${pedido.nome_responsavel}! Passando para confirmar que recebemos seu pedido da(s) bandeja(s) de Páscoa do(a) ${pedido.nome_aluno}. Tudo certo! \n\nSe puder, ajude a divulgar e compartilhar sue experiência com os outros pais, isso nos ajudaria muito. Nosso link: https://clientes.morangostatui.com.br`;
                 const linkZap = `https://wa.me/55${telLimpo}?text=${encodeURIComponent(msg)}`;
 
                 if (isPago) {
